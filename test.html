@@ -1,80 +1,78 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<title>업데이트된 구구단 게임</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-  }
-  #question, #stats {
-    margin-bottom: 20px;
-  }
-</style>
+    <meta charset="UTF-8">
+    <title>구구단 게임</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { max-width: 600px; margin: auto; padding: 20px; }
+        input, button { margin-top: 10px; }
+    </style>
 </head>
 <body>
-<div id="question"></div>
-<input type="number" id="answer" placeholder="답을 입력하세요" autofocus>
-<button onclick="checkAnswer()">확인</button>
-<div id="result"></div>
-<div id="stats"></div>
-
+<div class="container">
+    <h1>구구단 게임</h1>
+    <div id="question"></div>
+    <input type="number" id="answer" placeholder="답을 입력하세요" autofocus>
+    <button onclick="submitAnswer()">정답 확인</button>
+    <div id="result"></div>
+    <div id="stats"></div>
+</div>
 <script>
 let num1, num2;
+const stats = {
+    totalAttempts: 0,
+    correctAnswers: 0,
+    lastPlayedDate: ''
+};
 
-// Check localStorage for saved counts and last play date
-let totalQuestions = parseInt(localStorage.getItem('totalQuestions')) || 0;
-let correctAnswers = parseInt(localStorage.getItem('correctAnswers')) || 0;
-let lastPlayDate = localStorage.getItem('lastPlayDate') || new Date().toLocaleDateString();
-
-function generateQuestion() {
-  num1 = Math.floor(Math.random() * 9) + 1;
-  num2 = Math.floor(Math.random() * 9) + 1;
-  document.getElementById('question').innerHTML = `${num1} x ${num2} = ?`;
-  if (new Date().toLocaleDateString() === lastPlayDate) {
-    totalQuestions++;
-  } else {
-    totalQuestions = 1;
-    correctAnswers = 0;
-    lastPlayDate = new Date().toLocaleDateString();
-    localStorage.setItem('lastPlayDate', lastPlayDate);
-  }
-  updateStats();
+function loadStats() {
+    const savedStats = JSON.parse(localStorage.getItem('gugudanStats'));
+    const today = new Date().toISOString().split('T')[0];
+    if (savedStats && savedStats.lastPlayedDate === today) {
+        Object.assign(stats, savedStats);
+    } else {
+        stats.totalAttempts = 0;
+        stats.correctAnswers = 0;
+        stats.lastPlayedDate = today;
+    }
+    updateStats();
 }
 
-function checkAnswer() {
-  const userAnswer = document.getElementById('answer').value;
-  const correctAnswer = num1 * num2;
-  if (parseInt(userAnswer, 10) === correctAnswer) {
-    document.getElementById('result').innerHTML = "정답입니다!";
-    correctAnswers++;
-  } else {
-    document.getElementById('result').innerHTML = "틀렸습니다. 다시 시도해보세요.";
-  }
-  localStorage.setItem('totalQuestions', totalQuestions);
-  localStorage.setItem('correctAnswers', correctAnswers);
-  generateQuestion();
-  document.getElementById('answer').value = '';
-  document.getElementById('answer').focus();
+function saveStats() {
+    localStorage.setItem('gugudanStats', JSON.stringify(stats));
+}
+
+function generateQuestion() {
+    num1 = Math.floor(Math.random() * 9) + 1;
+    num2 = Math.floor(Math.random() * 9) + 1;
+    document.getElementById('question').textContent = `${num1} x ${num2} = ?`;
 }
 
 function updateStats() {
-  const accuracy = totalQuestions > 0 ? ((correctAnswers / totalQuestions) * 100).toFixed(2) : 0;
-  document.getElementById('stats').innerHTML = `총 문제 수: ${totalQuestions}, 정답 수: ${correctAnswers}, 정답률: ${accuracy}%`;
+    const accuracy = stats.totalAttempts > 0 ? (stats.correctAnswers / stats.totalAttempts * 100).toFixed(2) : 0;
+    document.getElementById('stats').innerHTML = `푼 문제 수: ${stats.totalAttempts}, 정답 수: ${stats.correctAnswers}, 정답률: ${accuracy}%`;
 }
 
-// Initialize game with the first question and load stats
+function submitAnswer() {
+    const userAnswer = parseInt(document.getElementById('answer').value, 10);
+    if (userAnswer === num1 * num2) {
+        document.getElementById('result').textContent = "정답입니다!";
+        stats.correctAnswers++;
+    } else {
+        document.getElementById('result').textContent = "틀렸습니다!";
+    }
+    stats.totalAttempts++;
+    saveStats();
+    updateStats();
+    generateQuestion();
+    document.getElementById('answer').value = ''; // 입력 필드 초기화
+    document.getElementById('answer').focus(); // 입력 필드에 다시 포커스
+}
+
 window.onload = function() {
-  if (new Date().toLocaleDateString() !== lastPlayDate) {
-    totalQuestions = 0;
-    correctAnswers = 0;
-    lastPlayDate = new Date().toLocaleDateString();
-    localStorage.setItem('lastPlayDate', lastPlayDate);
-    localStorage.setItem('totalQuestions', '0');
-    localStorage.setItem('correctAnswers', '0');
-  }
-  generateQuestion();
+    loadStats();
+    generateQuestion();
 };
 </script>
 </body>
