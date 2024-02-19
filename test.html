@@ -1,79 +1,186 @@
 <!DOCTYPE html>
-<html lang="ko">
+
+<html>
+
 <head>
-    <meta charset="UTF-8">
+
     <title>구구단 게임</title>
+
     <style>
-        body { font-family: Arial, sans-serif; }
-        .container { max-width: 600px; margin: auto; padding: 20px; }
-        input, button { margin-top: 10px; }
+
+        body {
+
+            font-family: Arial, sans-serif;
+
+            text-align: center;
+
+        }
+
+        #game {
+
+            margin-top: 20px;
+
+        }
+
     </style>
+
 </head>
+
 <body>
-<div class="container">
-    <h1>구구단 게임</h1>
-    <div id="question"></div>
-    <input type="number" id="answer" placeholder="답을 입력하세요" autofocus>
-    <button onclick="submitAnswer()">정답 확인</button>
-    <div id="result"></div>
-    <div id="stats"></div>
-</div>
-<script>
-let num1, num2;
-const stats = {
-    totalAttempts: 0,
-    correctAnswers: 0,
-    lastPlayedDate: ''
-};
 
-function loadStats() {
-    const savedStats = JSON.parse(localStorage.getItem('gugudanStats'));
-    const today = new Date().toISOString().split('T')[0];
-    if (savedStats && savedStats.lastPlayedDate === today) {
-        Object.assign(stats, savedStats);
-    } else {
-        stats.totalAttempts = 0;
-        stats.correctAnswers = 0;
-        stats.lastPlayedDate = today;
-    }
-    updateStats();
-}
+    <div id="game">
 
-function saveStats() {
-    localStorage.setItem('gugudanStats', JSON.stringify(stats));
-}
+        <h2>오늘 날짜: <span id="todayDate"></span></h2>
 
-function generateQuestion() {
-    num1 = Math.floor(Math.random() * 9) + 1;
-    num2 = Math.floor(Math.random() * 9) + 1;
-    document.getElementById('question').textContent = `${num1} x ${num2} = ?`;
-}
+        <h2>구구단 게임</h2>
 
-function updateStats() {
-    const accuracy = stats.totalAttempts > 0 ? (stats.correctAnswers / stats.totalAttempts * 100).toFixed(2) : 0;
-    document.getElementById('stats').innerHTML = `푼 문제 수: ${stats.totalAttempts}, 정답 수: ${stats.correctAnswers}, 정답률: ${accuracy}%`;
-}
+        <div id="question">문제: </div>
 
-function submitAnswer() {
-    const userAnswer = parseInt(document.getElementById('answer').value, 10);
-    if (userAnswer === num1 * num2) {
-        document.getElementById('result').textContent = "정답입니다!";
-        stats.correctAnswers++;
-    } else {
-        document.getElementById('result').textContent = "틀렸습니다!";
-    }
-    stats.totalAttempts++;
-    saveStats();
-    updateStats();
-    generateQuestion();
-    document.getElementById('answer').value = ''; // 입력 필드 초기화
-    document.getElementById('answer').focus(); // 입력 필드에 다시 포커스
-}
+        <input type="number" id="answer" placeholder="여기에 답을 입력하세요">
 
-window.onload = function() {
-    loadStats();
-    generateQuestion();
-};
-</script>
+        <button id="checkAnswer" disabled>정답 확인</button>
+
+        <div id="result"></div>
+
+        <div id="score">문제 수: 0, 정답 수: 0, 정답률: 0%</div>
+
+    </div>
+
+    <script>
+
+        let num1, num2;
+
+        let attempts = 0;
+
+        let correctAnswers = 0;
+
+
+
+        function displayTodayDate() {
+
+            const today = new Date();
+
+            document.getElementById('todayDate').innerText = today.toLocaleDateString('ko-KR', {
+
+                year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
+
+            });
+
+        }
+
+
+
+        function generateQuestion() {
+
+            num1 = Math.floor(Math.random() * 9) + 1;
+
+            num2 = Math.floor(Math.random() * 9) + 1;
+
+            document.getElementById('question').innerText = `문제: ${num1} x ${num2}`;
+
+            document.getElementById('answer').value = '';
+
+            document.getElementById('checkAnswer').disabled = true;
+
+        }
+
+
+
+        document.getElementById('answer').addEventListener('input', function() {
+
+            document.getElementById('checkAnswer').disabled = this.value.trim() === '';
+
+        });
+
+
+
+        document.getElementById('checkAnswer').addEventListener('click', function() {
+
+            const userAnswer = parseInt(document.getElementById('answer').value);
+
+            if (userAnswer === num1 * num2) {
+
+                document.getElementById('result').innerText = '정답입니다!';
+
+                correctAnswers++;
+
+            } else {
+
+                document.getElementById('result').innerText = '틀렸습니다.';
+
+            }
+
+            attempts++;
+
+            localStorage.setItem('attempts', attempts.toString());
+
+            localStorage.setItem('correctAnswers', correctAnswers.toString());
+
+            updateScore();
+
+            generateQuestion();
+
+        });
+
+
+
+        function updateScore() {
+
+            const accuracy = attempts > 0 ? ((correctAnswers / attempts) * 100).toFixed(2) : 0;
+
+            document.getElementById('score').innerText = `문제 수: ${attempts}, 정답 수: ${correctAnswers}, 정답률: ${accuracy}%`;
+
+        }
+
+
+
+        function resetDaily() {
+
+            const today = new Date().toDateString();
+
+            const lastPlayDate = localStorage.getItem('lastPlayDate');
+
+
+
+            if (lastPlayDate !== today) {
+
+                attempts = 0;
+
+                correctAnswers = 0;
+
+                localStorage.setItem('lastPlayDate', today);
+
+                localStorage.setItem('attempts', '0');
+
+                localStorage.setItem('correctAnswers', '0');
+
+            } else {
+
+                attempts = parseInt(localStorage.getItem('attempts')) || 0;
+
+                correctAnswers = parseInt(localStorage.getItem('correctAnswers')) || 0;
+
+            }
+
+            updateScore();
+
+        }
+
+
+
+        window.onload = function() {
+
+            displayTodayDate();
+
+            resetDaily();
+
+            generateQuestion();
+
+        };
+
+    </script>
+
 </body>
+
 </html>
+
